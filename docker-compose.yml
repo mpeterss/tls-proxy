@@ -1,0 +1,50 @@
+version: '3'
+services:
+  tcp-container:
+    build: ./tcp
+    container_name: tcp-container
+    ports:
+    - "3869:3868"
+    networks:
+      net:
+        aliases:
+        - "server.test.org"
+        ipv4_address: 172.16.0.2
+      default:
+    volumes:
+    - ./:/pcap
+
+  tls-container:
+    build: ./tls
+    container_name: tls-container
+    networks:
+      net:
+        aliases:
+        - "client.test.org"
+        ipv4_address: 172.16.0.3
+      default:
+    depends_on:
+    - "tcp-container"
+    - "nginx"
+    volumes:
+    - ./:/pcap
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "3868:3868"
+    networks:
+      net:
+        aliases:
+        - "tls-proxy.test.org"
+        ipv4_address: 172.16.0.4
+      default:
+
+networks:
+  net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.0.0/24
